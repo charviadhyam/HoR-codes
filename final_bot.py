@@ -4,8 +4,8 @@ import time
 from machine import Pin, time_pulse_us
 
 # Wi-Fi credentials
-SSID = 'ESP32-AP'
-PASSWORD = '12345678'
+SSID = 'vivo V50'
+PASSWORD = '12340000'
 
 # Login credentials
 USERNAME = 'admin'
@@ -30,17 +30,14 @@ STBY.on()
 TRIG = Pin(2, Pin.OUT)
 ECHO = Pin(4, Pin.IN)
 
-def start_access_point():
-    ap = network.WLAN(network.AP_IF)
-    ap.active(True)
-    ap.config(essid='ESP32-AP', password='12345678',authmode=network.AUTH_WPA_WPA2_PSK) 
-
-    while not ap.active():
+def connect_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(SSID, PASSWORD)
+    while not wlan.isconnected():
         time.sleep(1)
-
-    print("Access Point active. IP:", ap.ifconfig()[0])
-    return ap.ifconfig()[0]
-
+    print("Connected, IP:", wlan.ifconfig()[0])
+    return wlan.ifconfig()[0]
 
 def move_forward():
     AIN1.on(); AIN2.off()
@@ -78,53 +75,91 @@ def measure_distance():
     except:
         return None
 
+def banner():
+    return """
+    <div class="banner">
+        <h2>Hands-On Robotics</h2>
+        <p>by <span>RoboVITics Club</span></p>
+    </div>
+    """
+
 def login_page():
     return """<!DOCTYPE html>
 <html>
 <head>
     <title>Login</title>
     <style>
-        body {
-            background-color: #1b1b1b;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-box {
-            background: #2e2e2e;
-            padding: 30px;
-            border-radius: 10px;
-            color: white;
-            box-shadow: 0 0 20px #000;
-        }
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #a7e163;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+body {
+    background-color: #121212;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    color: #eee;
+}
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 50px;
+}
+.login-box {
+    background: #1e1e1e;
+    padding: 32px;
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: #eee;
+    box-shadow: 0 0 15px rgba(0,0,0,0.8);
+    width: 350px;
+    max-width: 90%;
+    transition: all 0.3s ease;
+}
+.login-box:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 25px rgba(0, 255, 180, 0.5);
+}
+h2 { text-align: center; }
+input[type="text"], input[type="password"] {
+    width: 100%; padding: 10px; margin: 10px 0;
+    border: 1px solid #444; border-radius: 6px;
+    background: #2a2a2a; color: #eee;
+}
+button {
+    width: 100%; padding: 12px;
+    background-color: #00ffaa;
+    border: none; border-radius: 6px;
+    cursor: pointer; font-weight: bold;
+    color: #000;
+    transition: all 0.3s ease;
+}
+button:hover {
+    background-color: #00dd99;
+    box-shadow: 0 4px 15px rgba(0, 255, 180, 0.5);
+}
+.banner {
+    text-align: center;
+    color: #00ffaa;
+    font-size: 1.5rem;
+    line-height: 1.4;
+}
+.banner span {
+    color: #00ccff;
+    font-weight: bold;
+}
     </style>
 </head>
 <body>
-    <form class="login-box" method="POST" action="/login">
-        <h2>Login</h2>
-        <input type="text" name="username" placeholder="Username" required><br>
-        <input type="password" name="password" placeholder="Password" required><br>
-        <button type="submit">Sign In</button>
-    </form>
+     <div class="login-container">
+        <form class="login-box" method="POST" action="/login">
+            <h2>Login</h2>
+            <input type="text" name="username" placeholder="Username" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <button type="submit">Sign In</button>
+        </form>
+        """ + banner() + """
+    </div>
 </body>
 </html>"""
 
@@ -134,48 +169,78 @@ def html_page():
 <head>
     <title>ESP32 Bot Control</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #e3e9f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        h1 { color: #333; }
-        .button-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .button {
-            padding: 15px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            background-color: #e3e9f0;
-            border: none;
-            border-radius: 15px;
-            box-shadow: 9px 9px 16px #babecc, -9px -9px 16px #ffffff;
-            cursor: pointer;
-        }
-        .button:active {
-            box-shadow: inset 5px 5px 10px #babecc, inset -5px -5px 10px #ffffff;
-        }
-        .info {
-            margin-top: 30px;
-            font-size: 18px;
-            color: #333;
-            padding: 15px 30px;
-            border-radius: 15px;
-            background-color: #e3e9f0;
-            box-shadow: 9px 9px 16px #babecc, -9px -9px 16px #ffffff;
-        }
-        a { text-decoration: none; }
+body {
+  font-family: Arial, sans-serif;
+  background-color: #121212;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+  color: #eee;
+}
+h1 { color: #00ffaa; margin-bottom: 20px; }
+.button-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 20px;
+  width: 300px; height: 300px;
+  margin-bottom: 30px;
+}
+.button {
+  padding: 15px 30px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 12px;
+  background: #1e1e1e;
+  border: 2px solid #00ffaa;
+  color: #00ffaa;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.button:hover {
+  background-color: #00ffaa;
+  color: #000;
+  box-shadow: 0 6px 15px rgba(0,255,180,0.5);
+}
+.center-dot {
+  width: 16px; height: 16px;
+  background-color: #444;
+  border-radius: 50%;
+  align-self: center;
+  justify-self: center;
+}
+.info {
+  margin-top: 20px;
+  font-size: 18px;
+  padding: 15px 25px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  color: #00ccff;
+  border: 1px solid #333;
+}
+.banner {
+    text-align: center;
+    margin-top: 20px;
+    color: #00ffaa;
+    font-size: 1.3rem;
+    line-height: 1.4;
+}
+.banner span {
+    color: #00ccff;
+    font-weight: bold;
+}
+.forward{grid-column:2;grid-row:1;}
+.left{grid-column:1;grid-row:2;}
+.right{grid-column:3;grid-row:2;}
+.backward{grid-column:2;grid-row:3;}
+.center-dot{grid-column:2;grid-row:2;}
     </style>
     <script>
         function updateDistance() {
@@ -187,17 +252,45 @@ def html_page():
         }
         setInterval(updateDistance, 500);
         window.onload = updateDistance;
+
+        // Movement handling (hold button = move, release = stop)
+        function sendCommand(cmd, isDown) {
+            fetch(isDown ? '/' + cmd : '/stop');
+        }
     </script>
 </head>
 <body>
     <h1>ESP32 Bot Control</h1>
-    <div class="button-container">
-        <a href="/forward"><button class="button">Forward</button></a>
-        <a href="/left"><button class="button">Left</button></a>
-        <a href="/right"><button class="button">Right</button></a>
-        <a href="/backward"><button class="button">Backward</button></a>
-    </div>
-    <div class="info" id="distance">Loading...</div>
+<div class="button-container">
+    <div class="button forward" 
+         onmousedown="sendCommand('forward',true)" 
+         onmouseup="sendCommand('forward',false)" 
+         ontouchstart="sendCommand('forward',true)" 
+         ontouchend="sendCommand('forward',false)">Forward</div>
+
+    <div class="button left" 
+         onmousedown="sendCommand('left',true)" 
+         onmouseup="sendCommand('left',false)" 
+         ontouchstart="sendCommand('left',true)" 
+         ontouchend="sendCommand('left',false)">Left</div>
+
+    <div class="center-dot"></div>
+
+    <div class="button right" 
+         onmousedown="sendCommand('right',true)" 
+         onmouseup="sendCommand('right',false)" 
+         ontouchstart="sendCommand('right',true)" 
+         ontouchend="sendCommand('right',false)">Right</div>
+
+    <div class="button backward" 
+         onmousedown="sendCommand('backward',true)" 
+         onmouseup="sendCommand('backward',false)" 
+         ontouchstart="sendCommand('backward',true)" 
+         ontouchend="sendCommand('backward',false)">Backward</div>
+</div>
+
+<div class="info" id="distance">Loading...</div>
+""" + banner() + """
 </body>
 </html>"""
 
@@ -256,7 +349,7 @@ def handle_client(client):
         move_left()
     elif "/right" in path:
         move_right()
-    else:
+    elif "/stop" in path:
         stop()
 
     # Main control UI
@@ -264,15 +357,13 @@ def handle_client(client):
     client.send(html_page())
     client.close()
 
-
 # Server setup
-ip = start_access_point()
+ip = connect_wifi()
 addr = socket.getaddrinfo(ip, 80)[0][-1]
 s = socket.socket()
 s.bind(addr)
 s.listen(1)
 print("Listening on", addr)
-
 
 while True:
     try:
