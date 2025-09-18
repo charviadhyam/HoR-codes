@@ -1,24 +1,42 @@
-from machine import Pin, time_pulse_us
-import time
+from machine import Pin
+from time import sleep
 
-trig = Pin(5, Pin.OUT)
-echo = Pin(18, Pin.IN)
+AIN1=Pin(25,Pin.OUT)
+AIN2=Pin(33,Pin.OUT)
+BIN1=Pin(27,Pin.OUT)
+BIN2=Pin(14,Pin.OUT)
+pwma=Pin(32,Pin.OUT)
+pwmb=Pin(12,Pin.OUT)
+STBY= Pin(26,Pin.OUT)
 
-def get_distance():
-    trig.value(0)
-    time.sleep_us(2)
-    trig.value(1)
-    time.sleep_us(10)
-    trig.value(0)
+pwma.on()
+pwmb.on()
+STBY.on()
 
-    duration = time_pulse_us(echo, 1, 30000)  
-    distance = (duration / 2) / 29.1
-    return distance
+def Move_for():
+    AIN1.on();AIN2.off()
+    BIN1.on();BIN2.off()
+def move_back():
+    AIN1.off();AIN2.on()
+    BIN1.off();BIN2.on()
+def right():
+    AIN1.on();AIN2.off()
+    BIN1.off();BIN2.on()
+def left():
+    AIN1.off();AIN2.on()
+    BIN1.on();BIN2.off()
+def stop():
+    AIN1.off();AIN2.off()
+    BIN1.off();BIN2.off()
 
-while True:
-    try:
-        dist = get_distance()
-        print("Distance: {:.2f} cm".format(dist))
-    except OSError:
-        print("Out of range")
-    time.sleep(1)
+print("bot is moving....")
+move_for()
+sleep(2)
+right()
+sleep(2)
+move_back()
+sleep(2)
+left()
+sleep(2)
+stop()
+print("bot is in stop position ..... ")
